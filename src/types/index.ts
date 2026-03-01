@@ -23,6 +23,16 @@ export interface ChatMessageEntry {
   role: "user" | "assistant";
   content: string;
   createdAt: string;
+  threadId?: string | null;
+}
+
+export interface ChatThreadEntry {
+  id: string;
+  title: string;
+  lastMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
 }
 
 export interface ResourceEntry {

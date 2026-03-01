@@ -5,8 +5,16 @@ import { ChatBubble } from "./ChatBubble";
 import { ChatInput } from "./ChatInput";
 import { useChatStream } from "@/hooks/useChatStream";
 
-export function ChatWindow() {
-  const { messages, streaming, error, sendMessage, loadHistory } = useChatStream();
+interface ChatWindowProps {
+  threadId: string;
+  onMessageSent?: () => void;
+}
+
+export function ChatWindow({ threadId, onMessageSent }: ChatWindowProps) {
+  const { messages, streaming, error, sendMessage, loadHistory } = useChatStream({
+    threadId,
+    onMessageSent,
+  });
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

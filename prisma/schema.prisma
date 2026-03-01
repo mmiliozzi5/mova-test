@@ -43,6 +43,7 @@ model User {
   departmentId   String?
   moodLogs       MoodLog[]
   chatMessages   ChatMessage[]
+  chatThreads    ChatThread[]
   accounts       Account[]
   sessions       Session[]
   createdAt      DateTime      @default(now())
@@ -60,15 +61,30 @@ model MoodLog {
   @@index([userId, loggedAt])
 }
 
-model ChatMessage {
-  id        String   @id @default(cuid())
-  role      String
-  content   String   @db.Text
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model ChatThread {
+  id        String        @id @default(cuid())
+  title     String
   userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([userId, updatedAt])
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  role      String
+  content   String      @db.Text
+  createdAt DateTime    @default(now())
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  thread    ChatThread? @relation(fields: [threadId], references: [id], onDelete: SetNull)
+  threadId  String?
 
   @@index([userId, createdAt])
+  @@index([threadId, createdAt])
 }
 
 model Resource {

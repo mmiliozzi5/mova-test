@@ -3,14 +3,19 @@
 import { useState, useCallback } from "react";
 import { ChatMessageEntry } from "@/types";
 
-export function useChatStream() {
+interface UseChatStreamOptions {
+  threadId: string;
+  onMessageSent?: () => void;
+}
+
+export function useChatStream({ threadId, onMessageSent }: UseChatStreamOptions) {
   const [messages, setMessages] = useState<ChatMessageEntry[]>([]);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState("");
 
   const loadHistory = useCallback(async () => {
     try {
-      const res = await fetch("/api/chat");
+      const res = await fetch(`/api/chat/threads/${threadId}/messages`);
       if (res.ok) {
         const data = await res.json();
         setMessages(data);
@@ -18,7 +23,7 @@ export function useChatStream() {
     } catch {
       // silently fail on history load
     }
-  }, []);
+  }, [threadId]);
 
   const sendMessage = useCallback(
     async (content: string) => {
@@ -26,7 +31,6 @@ export function useChatStream() {
 
       setError("");
 
-      // Optimistic user message
       const userMsg: ChatMessageEntry = {
         id: `temp-user-${Date.now()}`,
         role: "user",
@@ -34,7 +38,6 @@ export function useChatStream() {
         createdAt: new Date().toISOString(),
       };
 
-      // Optimistic assistant bubble
       const assistantMsg: ChatMessageEntry = {
         id: `temp-assistant-${Date.now()}`,
         role: "assistant",
@@ -46,7 +49,7 @@ export function useChatStream() {
       setStreaming(true);
 
       try {
-        const res = await fetch("/api/chat", {
+        const res = await fetch(`/api/chat/threads/${threadId}/messages`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ content }),
@@ -77,14 +80,14 @@ export function useChatStream() {
         }
       } catch {
         setError("Something went wrong. Please try again.");
-        setMessages((prev) => prev.slice(0, -2)); // Remove optimistic messages
+        setMessages((prev) => prev.slice(0, -2));
       } finally {
         setStreaming(false);
-        // Reload to get persisted IDs
         await loadHistory();
+        onMessageSent?.();
       }
     },
-    [streaming, loadHistory]
+    [streaming, loadHistory, threadId, onMessageSent]
   );
 
   return { messages, streaming, error, sendMessage, loadHistory };
